@@ -11,7 +11,7 @@
     "node": "0.4.x"
   },
   "dependencies": {
-    "aws-lib": "0.0.x",
+    "aws-lib": "0.0.5",
     "underscore": "1.1.x",
     "optimist": "0.2.x",
     "step": "0.0.x",
