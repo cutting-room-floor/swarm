@@ -113,10 +113,15 @@ swarm.metadata = function() {
         }
 
         if (argv.hostname) {
+            argv.filter = 'privateDnsName:' + argv.hostname;
+        }
+
+        if (argv.filter) {
+            var filter = argv.filter.split(':');
             var instances = _(instances).chain()
                 .filter(function(instance) {
-                    return _(instance.privateDnsName).isString() &&
-                        instance.privateDnsName.toLowerCase() === argv.hostname.toLowerCase();
+                    return _(instance[filter[0]]).isString() &&
+                        instance[filter[0]].toLowerCase() === filter[1].toLowerCase();
                 })
                 .value();
         }
