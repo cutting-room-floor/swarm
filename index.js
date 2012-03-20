@@ -137,7 +137,12 @@ swarm.metadata = function() {
                 return instance.Class === argv.class;
             });
         }
-        console.log(_(instances).chain().pluck(argv.attribute).compact().value().join('\n'));
+        console.log(_(instances).chain()
+            .pluck(argv.attribute)
+            .compact()
+            .filter(_.isString)
+            .value()
+            .join('\n'));
     });
 
 
