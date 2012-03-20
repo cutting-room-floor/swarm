@@ -9,10 +9,10 @@ List running swarms
 
 > node index.js --config config.json list
 
-Get the hostname of all servers in the 'sidcar' swarm
+Get the hostname of all servers in the 'sidecar' swarm
 
 > node index.js --config config.json metadata --swarm sidecar --attribute dnsName
 
-Get hostnames for all tilestream-tile servers in the sidcar swarm.
+Get hostnames for all tilestream-tile servers in the sidecar swarm.
 
 > node index.js --config config.json metadata --swarm sidecar --attribute dnsName --class tilestream-tiles
