@@ -38,9 +38,9 @@ if (!_(['list', 'metadata', 'classify']).include(command)) {
     process.exit(1);
 }
 
-if (command === 'classify' && !argv.hostname) {
+if (command === 'classify' && !argv.filter) {
     optimist.showHelp();
-    console.error('Missing --hostname option required for %s command.', command);
+    console.error('Missing --filter option required for %s command.', command);
     process.exit(1);
 }
 
@@ -156,12 +156,16 @@ swarm.classify = function() {
         loadInstances(this);
     }, function(err, instances) {
         if (err) throw err;
-        var instance = _(instances).chain()
-            .filter(function(instance) {
-                return _(instance.privateDnsName).isString() &&
-                    instance.privateDnsName.toLowerCase() === argv.hostname.toLowerCase();
-            })
-            .first().value();
+        if (argv.filter) {
+            var filter = argv.filter.split(':');
+            var instances = _(instances).chain()
+                .filter(function(instance) {
+                    return _(instance[filter[0]]).isString() &&
+                        instance[filter[0]].toLowerCase() === filter[1].toLowerCase();
+                })
+                .value();
+        }
+        var instance = _(instances).first();
         var classes = [];
         if (instance.Class) classes.push('  - ' + instance.Class);
         if (instance.Class && instance.Supernode) classes.push('  - ' + instance.Class + '::supernode');

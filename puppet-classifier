@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-/usr/local/src/swarm/index.js classify --config /usr/local/src/swarm/settings.json --hostname $1
+/usr/local/src/swarm/index.js classify --config /usr/local/src/swarm/settings.json --filter=privateDnsName:$1
