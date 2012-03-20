@@ -83,22 +83,22 @@ swarm.list = function() {
 
 swarm.metadata = function() {
     Step(function() {
-        loadInstances(this.parallel());
-        // TODO Eliminate
-        loadTags(this.parallel());
-    }, function(err, instances, tags) {
+        loadInstances(this);
+    }, function(err, instances) {
         if (err) throw err;
         if (argv.self) {
             loadInstanceId(function(err, instanceId) {
-                var swarmFilter = _(tags).chain().filter(function(tag) {
-                    return tag.key === 'Swarm' && tag.resourceId === instanceId;
-                }).first().value().value;
-                this(null, instances, tags, swarmFilter);
+                var swarmFilter = _(instances).chain().map(function(instance) {
+                    if (instance.instanceId === instanceId) {
+                        return instance.Swarm;
+                    }
+                }).compact().first().value();
+                this(null, instances, swarmFilter);
             }.bind(this));
         } else {
-            this(null, instances, tags, argv.swarm);
+            this(null, instances, argv.swarm);
         }
-    }, function(err, instances, tags, swarmFilter) {
+    }, function(err, instances, swarmFilter) {
         if (err) throw err;
         var possibleAttr = _(instances).chain()
             .map(function(instance) { return _(instance).keys(); })
@@ -127,20 +127,14 @@ swarm.metadata = function() {
         }
 
         if (swarmFilter) {
-            var ids = _(tags).chain().filter(function(tag) {
-                return tag.key === 'Swarm' && tag.value === swarmFilter;
-            }).pluck('resourceId').value();
             var instances = _(instances).filter(function(instance) {
-                return _(ids).contains(instance.instanceId);
+                return instance.Swarm === swarmFilter;
             });
         }
 
         if (argv.class) {
-            var ids = _(tags).chain().filter(function(tag) {
-                return tag.key === 'Class' && tag.value === argv.class;
-            }).pluck('resourceId').value();
             var instances = _(instances).filter(function(instance) {
-                return _(ids).contains(instance.instanceId);
+                return instance.Class === argv.class;
             });
         }
         console.log(_(instances).chain().pluck(argv.attribute).compact().value().join('\n'));
@@ -159,9 +153,8 @@ swarm.metadata = function() {
 //
 swarm.classify = function() {
     Step(function() {
-        loadInstances(this.parallel());
-        loadTags(this.parallel());
-    }, function(err, instances, tags) {
+        loadInstances(this);
+    }, function(err, instances) {
         if (err) throw err;
         var instance = _(instances).chain()
             .filter(function(instance) {
@@ -169,21 +162,9 @@ swarm.classify = function() {
                     instance.privateDnsName.toLowerCase() === argv.hostname.toLowerCase();
             })
             .first().value();
-        var tags = _(tags).chain()
-            .filter(function(tag) {
-                return tag.resourceId === instance.instanceId;
-            })
-            .value();
-
-        var grouped = _(tags).groupBy(function(tag) {
-            return tag.key;
-        });
-        var classes = _(tags).chain().map(function(tag) {
-            if (tag.key === 'Class')
-                return '  - ' + tag.value;
-            if (tag.key === 'Supernode' && tag.value === 'true')
-                return '  - ' + grouped.Class[0].value + '::supernode';
-        }).compact().value();
+        var classes = [];
+        if (instance.Class) classes.push('  - ' + instance.Class);
+        if (instance.Class && instance.Supernode) classes.push('  - ' + instance.Class + '::supernode');
 
         // Output YAML.
         console.log('classes:');
