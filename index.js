@@ -21,7 +21,7 @@ var optimist = require('optimist')
     .describe('self', 'Query the swarm that the current instances belongs to. Optional for the metadata command.')
     .describe('class', 'The class of instances to query. Optional for the metadata command.')
     .describe('attribute', 'The EC2 API instance attribute to load from the swarm. Required for the metadata command.')
-    .describe('hostname', 'Private hostname of and EC2. Required for the classify command.')
+    .describe('hostname', 'Private hostname of and EC2. Required for the classify command and optional for the metadata command.')
     .demand('config');
 var argv = optimist.argv;
 
@@ -116,6 +116,15 @@ swarm.metadata = function() {
             console.error('Invalid attribute %s.\n\nAvailable attributes are:\n%s',
                 argv.attribute, possibleAttr.join(', '));
             process.exit(1);
+        }
+
+        if (argv.hostname) {
+            var instances = _(instances).chain()
+                .filter(function(instance) {
+                    return _(instance.privateDnsName).isString() &&
+                        instance.privateDnsName.toLowerCase() === argv.hostname.toLowerCase();
+                })
+                .value();
         }
 
         if (swarmFilter) {
