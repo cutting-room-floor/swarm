@@ -84,9 +84,16 @@ swarm.list = function() {
 swarm.metadata = function() {
     Step(function() {
         loadInstances(this.parallel());
+        // TODO Eliminate
         loadTags(this.parallel());
     }, function(err, instances, tags) {
         if (err) throw err;
+        var instances = _(instances).map(function(instance) {
+            _(instance.tagSet.item).each(function(tag) {
+                instance[tag.key] = tag.value;
+            });
+            return instance;
+        });
         if (argv.self) {
             loadInstanceId(function(err, instanceId) {
                 var swarmFilter = _(tags).chain().filter(function(tag) {
