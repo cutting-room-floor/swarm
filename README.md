@@ -7,12 +7,27 @@ An EC2 listing and searching utility. Swam lets you quickly get information abou
 
 List running swarms
 
-> node index.js --config config.json list
+    node index.js --config config.json list
 
-Get the hostname of all servers in the 'sidecar' swarm
+Swarm supports [EC2 tags](http://docs.amazonwebservices.com/AWSEC2/latest/UserGuide/Using_Tags.html)
+as filters and output. The examples below assume you have tagged some EC2
+instances with `Swarm` tag.
 
-> node index.js --config config.json metadata --swarm sidecar --attribute dnsName
+Get the hostname of instances with the `Swarm` tag set to `production`:
 
-Get hostnames for all tilestream-tile servers in the sidecar swarm.
+    node index.js --config config.json metadata --attribute dnsName --filter.Swarm production
 
-> node index.js --config config.json metadata --swarm sidecar --attribute dnsName --class tilestream-tiles
+Output the cluster name for instance `i-5h39fjk`:
+
+    node index.js --config config.json metadata --attribute Swarm --filter.instanceId i-5h39fjk
+
+If you run the command from an EC2 instance, you can swap `_self` in for an actual Swarm name
+and the Swarm of the current instance will be used.
+
+Get the hostanme of all instances in my Swarm.
+
+    node index.js --config config.json metadata --attribute dnsName --filter.Swarm _self
+
+You can use multiple filters at once. This will list the hostanme for all database servers in the staging swarm.
+
+    node index.js --config config.json metadata --attribute dnsName --filter.Swarm staging --filter.Class database-server

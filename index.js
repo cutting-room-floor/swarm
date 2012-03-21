@@ -17,11 +17,8 @@ var optimist = require('optimist')
            '  metadata: load given attribute from EC2 API\n' +
            '  classify: return list of puppet classes in YAML format suitable for use with puppet\'s ENC feature')
     .describe('config', 'Path to JSON configuration file that contains awsKey and awsSecret.')
-    .describe('swarm', 'The swarm to query. Optional for the metadata command.')
-    .describe('self', 'Query the swarm that the current instances belongs to. Optional for the metadata command.')
-    .describe('class', 'The class of instances to query. Optional for the metadata command.')
     .describe('attribute', 'The EC2 API instance attribute to load from the swarm. Required for the metadata command.')
-    .describe('hostname', 'Private hostname of and EC2. Required for the classify command and optional for the metadata command.')
+    .describe('filter', 'Applies a filter to results based on EC2 instance attributes and tags. Use `filter.<attributeName>`. Multiple filters are applied with the AND operator. Required for the classify command and optional for the metadata command.')
     .demand('config');
 var argv = optimist.argv;
 
@@ -86,20 +83,6 @@ swarm.metadata = function() {
         loadInstances(this);
     }, function(err, instances) {
         if (err) throw err;
-        if (argv.self) {
-            loadInstanceId(function(err, instanceId) {
-                var swarmFilter = _(instances).chain().map(function(instance) {
-                    if (instance.instanceId === instanceId) {
-                        return instance.Swarm;
-                    }
-                }).compact().first().value();
-                this(null, instances, swarmFilter);
-            }.bind(this));
-        } else {
-            this(null, instances, argv.swarm);
-        }
-    }, function(err, instances, swarmFilter) {
-        if (err) throw err;
         var possibleAttr = _(instances).chain()
             .map(function(instance) { return _(instance).keys(); })
             .flatten()
@@ -112,31 +95,6 @@ swarm.metadata = function() {
             process.exit(1);
         }
 
-        if (argv.hostname) {
-            argv.filter = 'privateDnsName:' + argv.hostname;
-        }
-
-        if (argv.filter) {
-            var filter = argv.filter.split(':');
-            var instances = _(instances).chain()
-                .filter(function(instance) {
-                    return _(instance[filter[0]]).isString() &&
-                        instance[filter[0]].toLowerCase() === filter[1].toLowerCase();
-                })
-                .value();
-        }
-
-        if (swarmFilter) {
-            var instances = _(instances).filter(function(instance) {
-                return instance.Swarm === swarmFilter;
-            });
-        }
-
-        if (argv.class) {
-            var instances = _(instances).filter(function(instance) {
-                return instance.Class === argv.class;
-            });
-        }
         console.log(_(instances).chain()
             .pluck(argv.attribute)
             .compact()
@@ -144,7 +102,6 @@ swarm.metadata = function() {
             .value()
             .join('\n'));
     });
-
 
 }
 
@@ -161,15 +118,6 @@ swarm.classify = function() {
         loadInstances(this);
     }, function(err, instances) {
         if (err) throw err;
-        if (argv.filter) {
-            var filter = argv.filter.split(':');
-            var instances = _(instances).chain()
-                .filter(function(instance) {
-                    return _(instance[filter[0]]).isString() &&
-                        instance[filter[0]].toLowerCase() === filter[1].toLowerCase();
-                })
-                .value();
-        }
         var instance = _(instances).first();
         var classes = [];
         if (instance.Class) classes.push('  - ' + instance.Class);
@@ -186,7 +134,7 @@ swarm[command]();
 function loadInstances(callback) {
     ec2.call('DescribeInstances', {}, function(result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
-        var instances = _(result.reservationSet.item).chain()
+        var i = _(result.reservationSet.item).chain()
             .pluck('instancesSet')
             .pluck('item')
             .map(function(instance) {
@@ -195,8 +143,40 @@ function loadInstances(callback) {
                 });
                 return instance;
             })
-            .value();
-        callback(null, instances);
+            .map(function(instance) {
+                var i = {};
+                _(instance).each(function(v, k) {
+                    if (_(v).isString()) {
+                        i[k] = v;
+                    }
+                });
+                return i;
+            });
+
+        Step(function() {
+            if (argv.filter && argv.filter.Swarm === '_self') {
+                loadInstanceId(function(err, instanceId) {
+                    if (err) throw err;
+                    argv.filter.Swarm = i.filter(function(instance) {
+                        return instance.instanceId === instanceId;
+                    }).pluck('Swarm').compact().first().value();
+                    this();
+                }.bind(this));
+            } else {
+                this();
+            }
+        }, function(err, instance) {
+            if (err) throw err;
+            _(argv.filter).each(function(v, k) {
+                i = i.filter(function(instance) {
+                    return _(instance[k]).isString() &&
+                        instance[k].toLowerCase() === v.toLowerCase();
+                });
+            });
+
+            callback(null, i.value());
+        });
+
     });
 };
 
