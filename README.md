@@ -24,7 +24,7 @@ Output the cluster name for instance `i-5h39fjk`:
 If you run the command from an EC2 instance, you can swap `_self` in for an actual Swarm name
 and the Swarm of the current instance will be used.
 
-Get the hostanme of all instances in my Swarm.
+Get the hostname of all instances in my Swarm.
 
     node index.js --config config.json metadata --attribute dnsName --filter.Swarm _self
 
