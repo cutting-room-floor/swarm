@@ -19,7 +19,8 @@ var optimist = require('optimist')
     .describe('config', 'Path to JSON configuration file that contains awsKey and awsSecret.')
     .describe('attribute', 'The EC2 API instance attribute to load from the swarm. Required for the metadata command.')
     .describe('filter', 'Applies a filter to results based on EC2 instance attributes and tags. Use `filter.<attributeName>`. Multiple filters are applied with the AND operator. Required for the classify command and optional for the metadata command.')
-    .demand('config');
+    .describe('awsKey', 'awsKey, overrides the value in gconfig file if both are provided.')
+    .describe('awsSecret', 'awsSecret, overrides the value in config file if both are provided.');
 var argv = optimist.argv;
 
 if (argv.help) {
@@ -47,12 +48,18 @@ if (command === 'metadata' && !argv.attribute) {
     process.exit(1);
 }
 
-try {
-    var config = JSON.parse(fs.readFileSync(argv.config, 'utf8'));
-} catch(e) {
-    console.warn('Invalid JSON config file: ' + argv.config);
-    throw e;
+var config = {};
+if (argv.config) {
+    try {
+        config = JSON.parse(fs.readFileSync(argv.config, 'utf8'));
+    } catch(e) {
+        console.warn('Invalid JSON config file: ' + argv.config);
+        throw e;
+    }
 }
+
+if (argv.awsKey) config.awsKey = argv.awsKey;
+if (argv.awsSecret) config.awsSecret= argv.awsSecret;
 
 if (!config.awsKey || !config.awsSecret) {
     console.error('Missing awsKey and/or awsSecret in config file.')
