@@ -184,7 +184,7 @@ function loadInstances(callback) {
             } else {
                 this();
             }
-        }, function(err, instance) {
+        }, function(err) {
             if (err) throw err;
             _(argv.filter).each(function(v, k) {
                 i = i.filter(function(instance) {
