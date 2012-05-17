@@ -141,9 +141,21 @@ swarm[command]();
 function loadInstances(callback) {
     ec2.call('DescribeInstances', {}, function(result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
-        var i = _(result.reservationSet.item).chain()
+
+        var instances = [];
+        _(result.reservationSet.item).chain()
             .pluck('instancesSet')
             .pluck('item')
+            .each(function(item) {
+                if (_.isArray(item)) {
+                    Array.prototype.push.apply(instances, item)
+                }
+                else {
+                    instances.push(item);
+                }
+            });
+
+        var i = _(instances).chain()
             .map(function(instance) {
                 _(instance.tagSet.item).each(function(tag) {
                     instance[tag.key] = tag.value;
