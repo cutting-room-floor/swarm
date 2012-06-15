@@ -156,6 +156,9 @@ function loadInstances(callback) {
             });
 
         var i = _(instances).chain()
+            .filter(function(instance) {
+                return instance.tagSet !== undefined;
+            })
             .map(function(instance) {
                 _(instance.tagSet.item).each(function(tag) {
                     instance[tag.key] = tag.value;
