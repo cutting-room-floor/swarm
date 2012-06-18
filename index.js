@@ -138,6 +138,8 @@ swarm.classify = function() {
 swarm[command]();
 
 function loadInstances(callback) {
+    // Special filters
+    var exclude = ['Class'];
     ec2.call('DescribeInstances', {}, function(result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
 
@@ -186,13 +188,26 @@ function loadInstances(callback) {
             } else {
                 this();
             }
-        }, function(err) {
+        },
+          function(err) {
             if (err) throw err;
             _(argv.filter).each(function(v, k) {
-                i = i.filter(function(instance) {
-                    return _(instance[k]).isString() &&
-                        instance[k].toLowerCase() === v.toLowerCase();
-                });
+                if (_.indexOf(exclude, k) == -1) {
+                    i = i.filter(function(instance) {
+                        return _(instance[k]).isString() &&
+                            instance[k].toLowerCase() === v.toLowerCase();
+                    });
+                } else {
+                    // Handle special filters
+                    i = i.filter(function(instance) {
+                        if (k == 'Class') {
+                            if (instance.PuppetClasses) {
+                                return has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
+                            } else { return false }
+                        }
+                        return true;
+                    });    
+                }
             });
 
             callback(null, i.value());
@@ -215,4 +230,16 @@ function loadTags(callback) {
 
 function loadInstanceId(callback) {
     (new get('http://169.254.169.254/latest/meta-data/instance-id')).asString(callback);
+}
+
+function has(obj, match) {
+    for (k in obj) {
+        if (k === match) {
+            return true;
+        }
+        else {
+            if (_.isObject(obj[k])) return has(obj[k], match)
+        }
+    }
+    return false;
 }
