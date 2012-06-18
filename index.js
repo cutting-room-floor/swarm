@@ -244,7 +244,7 @@ function loadInstanceId(callback) {
 
 function has(obj, match) {
     for (k in obj) {
-        if (k === match) {
+        if (k === match && _.isObject(obj[k])) {
             return true;
         }
         else {
