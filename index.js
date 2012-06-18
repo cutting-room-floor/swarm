@@ -139,7 +139,7 @@ swarm[command]();
 
 function loadInstances(callback) {
     // Special filters
-    var exclude = ['Class'];
+    var exclude = ['Class', 'Parameter', 'Environment'];
     ec2.call('DescribeInstances', {}, function(result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
 
@@ -200,13 +200,23 @@ function loadInstances(callback) {
                 } else {
                     // Handle special filters
                     i = i.filter(function(instance) {
-                        if (k == 'Class') {
-                            if (instance.PuppetClasses) {
-                                return has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
-                            } else { return false }
+                        switch(k) {
+                            case 'Class':
+                                if (instance.PuppetClasses) {
+                                    return has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
+                                } else { return false }
+                            case 'Parameter':
+                                if (instance.PuppetParameters) {
+                                    return has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter);
+                                } else { return false }
+                            case 'Environment':
+                                if (instance.PuppetEnvironment) {
+                                    return instance.PuppetEnvironment;
+                                } else { return false }
+                            default:
+                                return false;
                         }
-                        return true;
-                    });    
+                    });
                 }
             });
 
