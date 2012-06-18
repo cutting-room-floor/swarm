@@ -6,6 +6,7 @@ var Step = require('step');
 var _ = require('underscore');
 var fs = require('fs');
 var get = require('get');
+var yamlish = require('yamlish');
 var config;
 var ec2;
 
@@ -126,13 +127,11 @@ swarm.classify = function() {
     }, function(err, instances) {
         if (err) throw err;
         var instance = _(instances).first();
-        var classes = [];
-        if (instance.Class) classes.push('  - ' + instance.Class);
-        if (instance.Class && instance.Supernode) classes.push('  - ' + instance.Class + '::supernode');
-
-        // Output YAML.
-        console.log('classes:');
-        console.log(classes.join('\n'));
+        var hash = {};
+        if (instance['PuppetClasses']) hash['classes'] = JSON.parse(instance['PuppetClasses']);
+        if (instance['PuppetParameters']) hash['parameters'] = JSON.parse(instance['PuppetParameters']);
+        if (instance['PuppetEnvironment']) hash['environment'] = instance['PuppetEnvironment'];
+        console.log(yamlish.encode(hash));
     });
 };
 
