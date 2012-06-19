@@ -202,10 +202,12 @@ function loadInstances(callback) {
                     i = i.filter(function(instance) {
                         switch(k) {
                             case 'Class':
+                                // TODO: support filter by whether class has certain parameter
                                 if (instance.PuppetClasses) {
                                     return has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
                                 } else { return false }
                             case 'Parameter':
+                                // These are global parameters, not class parameters
                                 if (instance.PuppetParameters) { 
                                     return _.has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter);
                                 } else { return false }
