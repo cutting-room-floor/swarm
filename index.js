@@ -139,7 +139,7 @@ swarm[command]();
 
 function loadInstances(callback) {
     // Special filters
-    var exclude = ['Class', 'Parameter', 'Environment'];
+    var exclude = ['Class', 'Parameter', 'Environment', 'ClassParameter'];
     ec2.call('DescribeInstances', {}, function(result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
 
@@ -202,9 +202,8 @@ function loadInstances(callback) {
                     i = i.filter(function(instance) {
                         switch(k) {
                             case 'Class':
-                                // TODO: support filter by whether class has certain parameter
                                 if (instance.PuppetClasses) {
-                                    return has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
+                                    return _.has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
                                 } else { return false }
                             case 'Parameter':
                                 // These are global parameters, not class parameters
@@ -215,6 +214,14 @@ function loadInstances(callback) {
                                 if (instance.PuppetEnvironment) {
                                     return instance.PuppetEnvironment;
                                 } else { return false }
+                            case 'ClassParameter':
+                                if (instance.PuppetClasses) {
+                                    var klass = argv.filter.ClassParameter.split(':')[0];
+                                    var param = argv.filter.ClassParameter.split(':')[1];
+                                    if (_.has(JSON.parse(instance.PuppetClasses), klass)) {
+                                        return _.has(JSON.parse(instance.PuppetClasses)[klass], param)
+                                    } else { return false; }
+                                } else { return false; }
                             default:
                                 return false;
                         }
@@ -242,15 +249,4 @@ function loadTags(callback) {
 
 function loadInstanceId(callback) {
     (new get('http://169.254.169.254/latest/meta-data/instance-id')).asString(callback);
-}
-
-function has(obj, match) {
-    for (k in obj) {
-        if (k === match && _.isObject(obj[k])) {
-            return true;
-        } else {
-            if (_.isObject(obj[k])) return has(obj[k], match)
-        }
-    }
-    return false;
 }
