@@ -206,9 +206,12 @@ function loadInstances(callback) {
                                     return has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
                                 } else { return false }
                             case 'Parameter':
-                                if (instance.PuppetParameters) {
-                                    return has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter);
-                                } else { return false }
+                                if (instance.PuppetParameters && 
+                                  _.has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter)) {
+                                        return JSON.parse(instance.PuppetParameters)[argv.filter.Parameter];
+                                } else {
+                                    return false
+                                }
                             case 'Environment':
                                 if (instance.PuppetEnvironment) {
                                     return instance.PuppetEnvironment;
@@ -246,8 +249,7 @@ function has(obj, match) {
     for (k in obj) {
         if (k === match && _.isObject(obj[k])) {
             return true;
-        }
-        else {
+        } else {
             if (_.isObject(obj[k])) return has(obj[k], match)
         }
     }
