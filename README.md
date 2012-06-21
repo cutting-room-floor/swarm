@@ -67,6 +67,8 @@ A string, such as
 
     production 
 
+### Filter with special filters and ec2 tags
+
 Filter your ec2's using Swarm with commands like:
 
     node index.js --config config.json metadata --attribute dnsName --filter.Class ntp
