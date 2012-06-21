@@ -6,6 +6,7 @@ var Step = require('step');
 var _ = require('underscore');
 var fs = require('fs');
 var get = require('get');
+var yamlish = require('yamlish');
 var config;
 var ec2;
 
@@ -126,19 +127,19 @@ swarm.classify = function() {
     }, function(err, instances) {
         if (err) throw err;
         var instance = _(instances).first();
-        var classes = [];
-        if (instance.Class) classes.push('  - ' + instance.Class);
-        if (instance.Class && instance.Supernode) classes.push('  - ' + instance.Class + '::supernode');
-
-        // Output YAML.
-        console.log('classes:');
-        console.log(classes.join('\n'));
+        var hash = {};
+        if (instance['PuppetClasses']) hash['classes'] = JSON.parse(instance['PuppetClasses']);
+        if (instance['PuppetParameters']) hash['parameters'] = JSON.parse(instance['PuppetParameters']);
+        if (instance['PuppetEnvironment']) hash['environment'] = instance['PuppetEnvironment'];
+        console.log(yamlish.encode(hash));
     });
 };
 
 swarm[command]();
 
 function loadInstances(callback) {
+    // Special filters
+    var exclude = ['Class', 'Parameter', 'Environment', 'ClassParameter'];
     ec2.call('DescribeInstances', {}, function(result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
 
@@ -187,13 +188,45 @@ function loadInstances(callback) {
             } else {
                 this();
             }
-        }, function(err) {
+        },
+          function(err) {
             if (err) throw err;
             _(argv.filter).each(function(v, k) {
-                i = i.filter(function(instance) {
-                    return _(instance[k]).isString() &&
-                        instance[k].toLowerCase() === v.toLowerCase();
-                });
+                if (_.indexOf(exclude, k) == -1) {
+                    i = i.filter(function(instance) {
+                        return _(instance[k]).isString() &&
+                            instance[k].toLowerCase() === v.toLowerCase();
+                    });
+                } else {
+                    // Handle special filters
+                    i = i.filter(function(instance) {
+                        switch(k) {
+                            case 'Class':
+                                if (instance.PuppetClasses) {
+                                    return _.has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
+                                } else { return false }
+                            case 'Parameter':
+                                // These are global parameters, not class parameters
+                                if (instance.PuppetParameters) { 
+                                    return _.has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter);
+                                } else { return false }
+                            case 'Environment':
+                                if (instance.PuppetEnvironment) {
+                                    return instance.PuppetEnvironment;
+                                } else { return false }
+                            case 'ClassParameter':
+                                if (instance.PuppetClasses) {
+                                    var klass = argv.filter.ClassParameter.split(':')[0];
+                                    var param = argv.filter.ClassParameter.split(':')[1];
+                                    if (_.has(JSON.parse(instance.PuppetClasses), klass)) {
+                                        return _.has(JSON.parse(instance.PuppetClasses)[klass], param)
+                                    } else { return false; }
+                                } else { return false; }
+                            default:
+                                return false;
+                        }
+                    });
+                }
             });
 
             callback(null, i.value());
