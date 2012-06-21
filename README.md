@@ -73,11 +73,11 @@ Filter your ec2's using Swarm with commands like:
 
     node index.js --config config.json metadata --attribute dnsName --filter.Class ntp
 
-
     node index.js --config config.json metadata --attribute dnsName --filter.ClassParameter ntp:ntp_server
 
-
     node index.js --config config.json metadata --attribute dnsName --filter.Parameter ntp_servers
+    
+    node index.js --config config.json metadata --attribute dnsName --filter.Environment production
 
 Notice the ClassParameter filter is a class name and a parameter on that class separated by a colon.  At present, swarm does not check the value of a paramter or class parameter, but instead filters based on whether or not that paramter or class paramter exists at all.
 
