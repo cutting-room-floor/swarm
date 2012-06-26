@@ -8,7 +8,7 @@ var fs = require('fs');
 var get = require('get');
 var yamlish = require('yamlish');
 var config;
-var ec2;
+var clients = {};
 
 var optimist = require('optimist')
     .usage('A tool for working with swarms of MapBox servers.\n' +
@@ -21,7 +21,8 @@ var optimist = require('optimist')
     .describe('attribute', 'The EC2 API instance attribute to load from the swarm. Required for the metadata command.')
     .describe('filter', 'Applies a filter to results based on EC2 instance attributes and tags. Use `filter.<attributeName>`. Multiple filters are applied with the AND operator. Required for the classify command and optional for the metadata command.')
     .describe('awsKey', 'awsKey, overrides the value in gconfig file if both are provided.')
-    .describe('awsSecret', 'awsSecret, overrides the value in config file if both are provided.');
+    .describe('awsSecret', 'awsSecret, overrides the value in config file if both are provided.')
+    .default('regions', ['us-east-1']);
 var argv = optimist.argv;
 
 if (argv.help) {
@@ -67,8 +68,10 @@ if (!config.awsKey || !config.awsSecret) {
     process.exit(1);
 }
 
-// TODO: Determine how to support multiple AWS regions.
-var ec2 = aws.createEC2Client(config.awsKey, config.awsSecret, {version: '2012-03-01'});
+_(argv.regions.split(',')).each(function(region) {
+    clients[region] = aws.createEC2Client(config.awsKey, config.awsSecret, 
+      {version: '2012-03-01', host: 'ec2.' + region + '.amazonaws.com'});
+});
 
 var swarm = {};
 
@@ -138,13 +141,30 @@ swarm.classify = function() {
 swarm[command]();
 
 function loadInstances(callback) {
+    var instances = [];
+    var i;
     // Special filters
     var exclude = ['Class', 'Parameter', 'Environment', 'ClassParameter'];
-    ec2.call('DescribeInstances', {}, function(result) {
+    Step(
+        function() {
+            var group = this.group();
+            _(clients).each(function(client) {
+                client.call('DescribeInstances', {}, group());
+            });
+        },
+        function(err, result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
-
-        var instances = [];
-        _(result.reservationSet.item).chain()
+        var items = [];
+        _(result).chain().each(function(v, k, list) {
+            if (v.reservationSet.item instanceof Array) {
+                 _.each(v.reservationSet.item, function(item) {
+                     items.push(item);
+                 });
+            } else {
+                items.push(v.reservationSet.item);
+            }
+        })
+        _(items).chain()
             .pluck('instancesSet')
             .pluck('item')
             .each(function(item) {
@@ -155,8 +175,7 @@ function loadInstances(callback) {
                     instances.push(item);
                 }
             });
-
-        var i = _(instances).chain()
+        i = _(instances).chain()
             .filter(function(instance) {
                 return instance.tagSet !== undefined;
             })
@@ -175,8 +194,9 @@ function loadInstances(callback) {
                 });
                 return i;
             });
-
-        Step(function() {
+            return this;
+        }, 
+        function() {
             if (argv.filter && argv.filter.Swarm === '_self') {
                 loadInstanceId(function(err, instanceId) {
                     if (err) throw err;
@@ -228,11 +248,13 @@ function loadInstances(callback) {
                     });
                 }
             });
+            return this;
+        },
+        function() {
+            return callback(null, i.value());
+        }
+     );
 
-            callback(null, i.value());
-        });
-
-    });
 };
 
 function loadTags(callback) {
