@@ -156,14 +156,16 @@ function loadInstances(callback) {
         if (result.Errors) return callback(result.Errors.Error.Message);
         var items = [];
         _(result).chain().each(function(v, k, list) {
-            if (v.reservationSet.item instanceof Array) {
-                 _.each(v.reservationSet.item, function(item) {
-                     items.push(item);
-                 });
-            } else {
-                items.push(v.reservationSet.item);
+            if (v.reservationSet.item) {
+                if (v.reservationSet.item instanceof Array) {
+                    _.each(v.reservationSet.item, function(item) {
+                    items.push(item);
+                });
+                } else {
+                    items.push(v.reservationSet.item);
+                }
             }
-        })
+        });
         _(items).chain()
             .pluck('instancesSet')
             .pluck('item')
