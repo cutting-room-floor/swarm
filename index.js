@@ -154,19 +154,14 @@ function loadInstances(callback) {
         },
         function(err, result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
-        var items = [];
-        _(result).chain().each(function(v, k, list) {
+        _(result).chain()
+            .map(function(v, k, list) {
             if (v.reservationSet.item) {
-                if (v.reservationSet.item instanceof Array) {
-                    _.each(v.reservationSet.item, function(item) {
-                    items.push(item);
-                });
-                } else {
-                    items.push(v.reservationSet.item);
-                }
+                return v.reservationSet.item;
             }
-        });
-        _(items).chain()
+            })
+            .compact()
+            .flatten()
             .pluck('instancesSet')
             .pluck('item')
             .each(function(item) {
