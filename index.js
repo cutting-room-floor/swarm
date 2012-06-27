@@ -22,7 +22,7 @@ var optimist = require('optimist')
     .describe('filter', 'Applies a filter to results based on EC2 instance attributes and tags. Use `filter.<attributeName>`. Multiple filters are applied with the AND operator. Required for the classify command and optional for the metadata command.')
     .describe('awsKey', 'awsKey, overrides the value in gconfig file if both are provided.')
     .describe('awsSecret', 'awsSecret, overrides the value in config file if both are provided.')
-    .default('regions', ['us-east-1']);
+    .default('regions', 'us-east-1,us-west-1,us-west-2,eu-west-1,ap-southeast-1,ap-northeast-1,sa-east-1');
 var argv = optimist.argv;
 
 if (argv.help) {
