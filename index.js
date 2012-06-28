@@ -255,15 +255,30 @@ function loadInstances(callback) {
 };
 
 function loadTags(callback) {
-    ec2.call('DescribeTags', {
-        'Filter.1.Name': 'resource-type',
-        'Filter.1.Value': 'instance'
-    }, function(result) {
-        if (result.Errors) return callback(result.Errors.Error.Message);
-        var tags = result.tagSet.item instanceof Array ?
-            result.tagSet.item : [result.tagSet.item];
-        callback(null, tags);
-    });
+    Step( 
+        function() {
+            var group = this.group();
+            _(clients).each(function(client) {
+                client.call('DescribeTags', {
+                    'Filter.1.Name': 'resource-type',
+                    'Filter.1.Value': 'instance'
+                    }, group());
+            });
+        },
+        function(err, result) {
+            if (result.Errors) return callback(result.Errors.Error.Message);
+            callback(null, _(result).chain()
+                .map(function(v, k) {
+                    if (v.tagSet) {
+                        return v.tagSet.item;
+                    }
+                })
+                .flatten()
+                .compact()
+                .value()
+            );
+        }
+    );
 };
 
 function loadInstanceId(callback) {
