@@ -249,8 +249,8 @@ function loadInstances(callback) {
             });
             return this;
         },
-        function() {
-            return callback(null, i.value());
+        function(err) {
+            return callback(err, i.value());
         }
      );
 
