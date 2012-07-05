@@ -2,7 +2,7 @@
   "author": "",
   "name": "swarm",
   "description": "A tool for working with swarms of MapBox servers.",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "repository": {
     "url": ""
   },

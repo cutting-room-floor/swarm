@@ -99,19 +99,21 @@ swarm.metadata = function() {
             .flatten()
             .uniq()
             .value();
-        if (!_(possibleAttr).include(argv.attribute)) {
+        if (instances.length && !_(possibleAttr).include(argv.attribute)) {
             optimist.showHelp();
             console.error('Invalid attribute %s.\n\nAvailable attributes are:\n%s',
                 argv.attribute, possibleAttr.join(', '));
             process.exit(1);
         }
-
-        console.log(_(instances).chain()
-            .pluck(argv.attribute)
-            .compact()
-            .filter(_.isString)
-            .value()
-            .join('\n'));
+        if (!instances.length) console.log("");
+        else {
+            console.log(_(instances).chain()
+                .pluck(argv.attribute)
+                .compact()
+                .filter(_.isString)
+                .value()
+                .join('\n'));
+        }
     });
 
 }
