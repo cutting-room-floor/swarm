@@ -182,6 +182,7 @@ function loadInstances(callback) {
                 _(instance.tagSet.item).each(function(tag) {
                     instance[tag.key] = tag.value;
                 });
+                instance.State = instance.instanceState.name;
                 return instance;
             })
             .map(function(instance) {
