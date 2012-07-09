@@ -147,14 +147,13 @@ function loadInstances(callback) {
     var i;
     // Special filters
     var exclude = ['Class', 'Parameter', 'Environment', 'ClassParameter'];
-    Step(
-        function() {
-            var group = this.group();
-            _(clients).each(function(client) {
-                client.call('DescribeInstances', {}, group());
-            });
-        },
-        function(err, result) {
+    Step(function() {
+        var group = this.group();
+        _(clients).each(function(client) {
+            client.call('DescribeInstances', {}, group());
+        });
+    },
+    function(err, result) {
         if (result.Errors) return callback(result.Errors.Error.Message);
         _(result).chain()
             .map(function(v, k, list) {
@@ -195,93 +194,89 @@ function loadInstances(callback) {
                 return i;
             });
             return this;
-        }, 
-        function() {
-            if (argv.filter && argv.filter.Swarm === '_self') {
-                loadInstanceId(function(err, instanceId) {
-                    if (err) throw err;
-                    argv.filter.Swarm = i.filter(function(instance) {
-                        return instance.instanceId === instanceId;
-                    }).pluck('Swarm').compact().first().value();
-                    this();
-                }.bind(this));
-            } else {
+    },
+    function() {
+        if (argv.filter && argv.filter.Swarm === '_self') {
+            loadInstanceId(function(err, instanceId) {
+                if (err) throw err;
+                argv.filter.Swarm = i.filter(function(instance) {
+                    return instance.instanceId === instanceId;
+                }).pluck('Swarm').compact().first().value();
                 this();
-            }
-        },
-          function(err) {
-            if (err) throw err;
-            _(argv.filter).each(function(v, k) {
-                if (_.indexOf(exclude, k) == -1) {
-                    i = i.filter(function(instance) {
-                        return _(instance[k]).isString() &&
-                            instance[k].toLowerCase() === v.toLowerCase();
-                    });
-                } else {
-                    // Handle special filters
-                    i = i.filter(function(instance) {
-                        switch(k) {
-                            case 'Class':
-                                if (instance.PuppetClasses) {
-                                    return _.has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
-                                } else { return false }
-                            case 'Parameter':
-                                // These are global parameters, not class parameters
-                                if (instance.PuppetParameters) { 
-                                    return _.has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter);
-                                } else { return false }
-                            case 'Environment':
-                                if (instance.PuppetEnvironment) {
-                                    return instance.PuppetEnvironment;
-                                } else { return false }
-                            case 'ClassParameter':
-                                if (instance.PuppetClasses) {
-                                    var klass = argv.filter.ClassParameter.split(':')[0];
-                                    var param = argv.filter.ClassParameter.split(':')[1];
-                                    if (_.has(JSON.parse(instance.PuppetClasses), klass)) {
-                                        return _.has(JSON.parse(instance.PuppetClasses)[klass], param)
-                                    } else { return false; }
-                                } else { return false; }
-                            default:
-                                return false;
-                        }
-                    });
-                }
-            });
-            return this;
-        },
-        function(err) {
-            return callback(err, i.value());
+            }.bind(this));
+        } else {
+            this();
         }
-     );
-
+    },
+    function(err) {
+        if (err) throw err;
+        _(argv.filter).each(function(v, k) {
+            if (_.indexOf(exclude, k) == -1) {
+                i = i.filter(function(instance) {
+                    return _(instance[k]).isString() &&
+                        instance[k].toLowerCase() === v.toLowerCase();
+                });
+            } else {
+                // Handle special filters
+                i = i.filter(function(instance) {
+                    switch(k) {
+                        case 'Class':
+                            if (instance.PuppetClasses) {
+                                return _.has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
+                            } else { return false }
+                        case 'Parameter':
+                            // These are global parameters, not class parameters
+                            if (instance.PuppetParameters) {
+                                return _.has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter);
+                            } else { return false }
+                        case 'Environment':
+                            if (instance.PuppetEnvironment) {
+                                return instance.PuppetEnvironment;
+                            } else { return false }
+                        case 'ClassParameter':
+                            if (instance.PuppetClasses) {
+                                var klass = argv.filter.ClassParameter.split(':')[0];
+                                var param = argv.filter.ClassParameter.split(':')[1];
+                                if (_.has(JSON.parse(instance.PuppetClasses), klass)) {
+                                    return _.has(JSON.parse(instance.PuppetClasses)[klass], param)
+                                } else { return false; }
+                            } else { return false; }
+                        default:
+                            return false;
+                    }
+                });
+            }
+        });
+        return this;
+    },
+    function(err) {
+        return callback(err, i.value());
+    });
 };
 
 function loadTags(callback) {
-    Step( 
-        function() {
-            var group = this.group();
-            _(clients).each(function(client) {
-                client.call('DescribeTags', {
-                    'Filter.1.Name': 'resource-type',
-                    'Filter.1.Value': 'instance'
-                    }, group());
-            });
-        },
-        function(err, result) {
-            if (result.Errors) return callback(result.Errors.Error.Message);
-            callback(null, _(result).chain()
-                .map(function(v, k) {
-                    if (v.tagSet) {
-                        return v.tagSet.item;
-                    }
-                })
-                .flatten()
-                .compact()
-                .value()
-            );
-        }
-    );
+    Step(function() {
+        var group = this.group();
+        _(clients).each(function(client) {
+            client.call('DescribeTags', {
+                'Filter.1.Name': 'resource-type',
+                'Filter.1.Value': 'instance'
+                }, group());
+        });
+    },
+    function(err, result) {
+        if (result.Errors) return callback(result.Errors.Error.Message);
+        callback(null, _(result).chain()
+            .map(function(v, k) {
+                if (v.tagSet) {
+                    return v.tagSet.item;
+                }
+            })
+            .flatten()
+            .compact()
+            .value()
+        );
+    });
 };
 
 function loadInstanceId(callback) {
