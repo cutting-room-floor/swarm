@@ -158,9 +158,7 @@ function loadInstances(callback) {
         if (result.Errors) throw new Error(result.Errors.Error.Message);
         _(result).chain()
             .map(function(v, k, list) {
-            if (v.reservationSet.item) {
-                return v.reservationSet.item;
-            }
+                if (v.reservationSet.item) return v.reservationSet.item;
             })
             .compact()
             .flatten()
