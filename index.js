@@ -154,7 +154,8 @@ function loadInstances(callback) {
         });
     },
     function(err, result) {
-        if (result.Errors) return callback(result.Errors.Error.Message);
+        if (err) throw err;
+        if (result.Errors) throw new Error(result.Errors.Error.Message);
         _(result).chain()
             .map(function(v, k, list) {
             if (v.reservationSet.item) {
@@ -173,6 +174,7 @@ function loadInstances(callback) {
                     instances.push(item);
                 }
             });
+
         i = _(instances).chain()
             .filter(function(instance) {
                 return instance.tagSet !== undefined;
@@ -193,9 +195,7 @@ function loadInstances(callback) {
                 });
                 return i;
             });
-            return this;
-    },
-    function() {
+
         if (argv.filter && argv.filter.Swarm === '_self') {
             loadInstanceId(function(err, instanceId) {
                 if (err) throw err;
@@ -247,9 +247,6 @@ function loadInstances(callback) {
                 });
             }
         });
-        return this;
-    },
-    function(err) {
         return callback(err, i.value());
     });
 };
