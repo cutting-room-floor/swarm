@@ -1,14 +1,12 @@
 #!/usr/bin/env node
 // A tool for working with swarms of MapBox servers.
 
-var aws = require('aws-lib');
 var Step = require('step');
 var _ = require('underscore');
 var fs = require('fs');
-var get = require('get');
 var yamlish = require('yamlish');
-var config;
-var clients = {};
+var instanceMetadata = require('./lib/instance-metadata');
+var ec2Api= require('./lib/ec2-api');
 
 var optimist = require('optimist')
     .usage('A tool for working with swarms of MapBox servers.\n' +
@@ -60,6 +58,8 @@ if (argv.config) {
     }
 }
 
+var regions = argv.regions.split(',');
+
 if (argv.awsKey) config.awsKey = argv.awsKey;
 if (argv.awsSecret) config.awsSecret= argv.awsSecret;
 
@@ -68,17 +68,13 @@ if (!config.awsKey || !config.awsSecret) {
     process.exit(1);
 }
 
-_(argv.regions.split(',')).each(function(region) {
-    clients[region] = aws.createEC2Client(config.awsKey, config.awsSecret, 
-      {version: '2012-03-01', host: 'ec2.' + region + '.amazonaws.com'});
-});
-
 var swarm = {};
 
 // List
 swarm.list = function() {
     Step(function() {
-        loadTags(this);
+        var filters = {'resource-type': 'instance'};
+        ec2Api.loadTags(ec2Api.createClients(config, regions), filters, this);
     }, function(err, tags) {
         if (err) throw err;
         var swarms = _(tags).chain()
@@ -91,7 +87,7 @@ swarm.list = function() {
 
 swarm.metadata = function() {
     Step(function() {
-        loadInstances(this);
+        ec2Api.loadInstances(ec2Api.createClients(config, regions), argv.filter, this);
     }, function(err, instances) {
         if (err) throw err;
         var possibleAttr = _(instances).chain()
@@ -128,7 +124,7 @@ swarm.metadata = function() {
 //
 swarm.classify = function() {
     Step(function() {
-        loadInstances(this);
+        ec2Api.loadInstances(ec2Api.createClients(config, regions), argv.filter, this);
     }, function(err, instances) {
         if (err) throw err;
         var instance = _(instances).first();
@@ -140,140 +136,47 @@ swarm.classify = function() {
     });
 };
 
-swarm[command]();
-
-function loadInstances(callback) {
-    var instances = [];
-    var i;
-    // Special filters
-    var exclude = ['Class', 'Parameter', 'Environment', 'ClassParameter'];
-    Step(function() {
-        var group = this.group();
-        _(clients).each(function(client) {
-            client.call('DescribeInstances', {}, group());
+// If any supported arguments have the `_self` value we resolve then first, and
+// then actually run the command.
+Step(function() {
+    // --filter.Swarm _self
+    if (argv.filter && argv.filter.Swarm === '_self') {
+        var next = this;
+        Step(function() {
+            instanceMetadata.loadId(this.parrallel())
+            instanceMetadata.loadAz(this.parrallel());
+        },
+        function(err, id, az) {
+            if (err) throw (err);
+            var filters = {'resource-type': 'instance', 'resource-id': id};
+            ec2Api.loadTags(ec2Api.createClients(config, [az.region]), filters, this);
+        },
+        function(err, tags) {
+            if (err) throw (err);
+            argv.filter.Swarm = _(tags).pluck('Swarm').compact().first().value();
+            next();
         });
-    },
-    function(err, result) {
-        if (err) throw err;
-        if (result.Errors) throw new Error(result.Errors.Error.Message);
-        _(result).chain()
-            .map(function(v, k, list) {
-                if (v.reservationSet.item) return v.reservationSet.item;
-            })
-            .compact()
-            .flatten()
-            .pluck('instancesSet')
-            .pluck('item')
-            .each(function(item) {
-                if (_.isArray(item)) {
-                    Array.prototype.push.apply(instances, item)
-                }
-                else {
-                    instances.push(item);
-                }
-            });
-
-        i = _(instances).chain()
-            .filter(function(instance) {
-                return instance.tagSet !== undefined;
-            })
-            .map(function(instance) {
-                _(instance.tagSet.item).each(function(tag) {
-                    instance[tag.key] = tag.value;
-                });
-                instance.State = instance.instanceState.name;
-                return instance;
-            })
-            .map(function(instance) {
-                var i = {};
-                _(instance).each(function(v, k) {
-                    if (_(v).isString()) {
-                        i[k] = v;
-                    }
-                });
-                return i;
-            });
-
-        if (argv.filter && argv.filter.Swarm === '_self') {
-            loadInstanceId(function(err, instanceId) {
-                if (err) throw err;
-                argv.filter.Swarm = i.filter(function(instance) {
-                    return instance.instanceId === instanceId;
-                }).pluck('Swarm').compact().first().value();
-                this();
-            }.bind(this));
-        } else {
+    }
+    else {
+        this();
+    }
+},
+function(err) {
+    if (err) throw err;
+    // --regions _self
+    var i = regions.indexOf('_self');
+    if (i !== -1) {
+        instanceMetadata.loadAz(function(err, az) {
+            if (err) this(err);
+            regions[i] = az.region;
             this();
-        }
-    },
-    function(err) {
-        if (err) throw err;
-        _(argv.filter).each(function(v, k) {
-            if (_.indexOf(exclude, k) == -1) {
-                i = i.filter(function(instance) {
-                    return _(instance[k]).isString() &&
-                        instance[k].toLowerCase() === v.toLowerCase();
-                });
-            } else {
-                // Handle special filters
-                i = i.filter(function(instance) {
-                    switch(k) {
-                        case 'Class':
-                            if (instance.PuppetClasses) {
-                                return _.has(JSON.parse(instance.PuppetClasses), argv.filter.Class);
-                            } else { return false }
-                        case 'Parameter':
-                            // These are global parameters, not class parameters
-                            if (instance.PuppetParameters) {
-                                return _.has(JSON.parse(instance.PuppetParameters), argv.filter.Parameter);
-                            } else { return false }
-                        case 'Environment':
-                            if (instance.PuppetEnvironment) {
-                                return instance.PuppetEnvironment;
-                            } else { return false }
-                        case 'ClassParameter':
-                            if (instance.PuppetClasses) {
-                                var klass = argv.filter.ClassParameter.split(':')[0];
-                                var param = argv.filter.ClassParameter.split(':')[1];
-                                if (_.has(JSON.parse(instance.PuppetClasses), klass)) {
-                                    return _.has(JSON.parse(instance.PuppetClasses)[klass], param)
-                                } else { return false; }
-                            } else { return false; }
-                        default:
-                            return false;
-                    }
-                });
-            }
         });
-        return callback(err, i.value());
-    });
-};
-
-function loadTags(callback) {
-    Step(function() {
-        var group = this.group();
-        _(clients).each(function(client) {
-            client.call('DescribeTags', {
-                'Filter.1.Name': 'resource-type',
-                'Filter.1.Value': 'instance'
-                }, group());
-        });
-    },
-    function(err, result) {
-        if (result.Errors) return callback(result.Errors.Error.Message);
-        callback(null, _(result).chain()
-            .map(function(v, k) {
-                if (v.tagSet) {
-                    return v.tagSet.item;
-                }
-            })
-            .flatten()
-            .compact()
-            .value()
-        );
-    });
-};
-
-function loadInstanceId(callback) {
-    (new get('http://169.254.169.254/latest/meta-data/instance-id')).asString(callback);
-}
+    }
+    else {
+        this();
+    }
+},
+function(err) {
+    if (err) throw err;
+    swarm[command]();
+});
