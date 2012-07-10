@@ -153,7 +153,9 @@ Step(function() {
         },
         function(err, tags) {
             if (err) throw (err);
-            argv.filter.Swarm = _(tags).pluck('Swarm').compact().first().value();
+            argv.filter.Swarm = _(tags).find(function(v){
+               return v.key == "Swarm";
+            }).value;
             next();
         });
     }
@@ -166,10 +168,11 @@ function(err) {
     // --regions _self
     var i = regions.indexOf('_self');
     if (i !== -1) {
+        var next = this;
         instanceMetadata.loadAz(function(err, az) {
-            if (err) this(err);
+            if (err) next(err);
             regions[i] = az.region;
-            this();
+            next();
         });
     }
     else {
