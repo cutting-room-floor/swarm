@@ -143,8 +143,8 @@ Step(function() {
     if (argv.filter && argv.filter.Swarm === '_self') {
         var next = this;
         Step(function() {
-            instanceMetadata.loadId(this.parrallel())
-            instanceMetadata.loadAz(this.parrallel());
+            instanceMetadata.loadId(this.parallel())
+            instanceMetadata.loadAz(this.parallel());
         },
         function(err, id, az) {
             if (err) throw (err);
