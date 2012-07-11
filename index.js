@@ -140,27 +140,27 @@ swarm.classify = function() {
 // then actually run the command.
 Step(function() {
     // --filter.TAG _self
-    var c = {};
-    var next = this;
-    var lookup = false;
-    _(argv.filter).each(function(val, key) {
-        if (val != '_self') return;
-        lookup = true;
+    var lookup = _(argv.filter).chain().map(function(v, k) {
+        if (v == '_self') return k;
+    }).compact().value();
 
+    if (!lookup) return this();
+
+    var tagCache;
+    var group = this.group();
+    _(lookup).each(function(key) {
+        var next = group();
         Step(function() {
-            if (c.id && c.az) return this(null, c.id, c.az);
             instanceMetadata.loadId(this.parallel())
             instanceMetadata.loadAz(this.parallel());
         }, function(err, id, az) {
             if (err) throw (err);
-            c.id = id;
-            c.az = az;
-            if (c.tags) return this(null, tags);
-            var filters = {'resource-type': 'instance', 'resource-id': c.id};
-            ec2Api.loadTags(ec2Api.createClients(config, [c.az.region]), filters, this);
+            if (tagCache) return this(null, tagCache);
+            var filters = {'resource-type': 'instance', 'resource-id': id};
+            ec2Api.loadTags(ec2Api.createClients(config, [az.region]), filters, this);
         }, function(err, tags) {
-            if (err) throw (err);
-            c.tags = tags;
+            if (err) return group(err);
+            tagCache = tags;
             argv.filter[key] = _(tags).find(function(v){
                return v.key == key;
             }).value;
@@ -168,7 +168,6 @@ Step(function() {
         });
     });
 
-    if (!lookup) this();
 }, function(err) {
     if (err) throw err;
     // --regions _self
