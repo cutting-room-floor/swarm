@@ -139,6 +139,18 @@ swarm.classify = function() {
 // If any supported arguments have the `_self` value we resolve then first, and
 // then actually run the command.
 Step(function() {
+    // --filter.instanceId _self
+    if (argv.filter && argv.filter.instanceId == '_self') {
+        var next = this;
+        instanceMetadata.loadId(function(err, id) {
+            if (err) next(err);
+            argv.filter.instanceId = id;
+            next();
+        });
+    }
+    else { this() }
+}, function(err) {
+    if (err) throw err;
     // --filter.TAG _self
     var lookup = _(argv.filter).chain().map(function(v, k) {
         if (v == '_self') return k;
@@ -180,9 +192,7 @@ Step(function() {
             next();
         });
     }
-    else {
-        this();
-    }
+    else { this() }
 }, function(err) {
     if (err) throw err;
     swarm[command]();
