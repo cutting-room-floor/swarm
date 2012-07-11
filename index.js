@@ -139,31 +139,37 @@ swarm.classify = function() {
 // If any supported arguments have the `_self` value we resolve then first, and
 // then actually run the command.
 Step(function() {
-    // --filter.Swarm _self
-    if (argv.filter && argv.filter.Swarm === '_self') {
-        var next = this;
+    // --filter.TAG _self
+    var c = {};
+    var next = this;
+    var lookup = false;
+    _(argv.filter).each(function(val, key) {
+        if (val != '_self') return;
+        lookup = true;
+
         Step(function() {
+            if (c.id && c.az) return this(null, c.id, c.az);
             instanceMetadata.loadId(this.parallel())
             instanceMetadata.loadAz(this.parallel());
-        },
-        function(err, id, az) {
+        }, function(err, id, az) {
             if (err) throw (err);
-            var filters = {'resource-type': 'instance', 'resource-id': id};
-            ec2Api.loadTags(ec2Api.createClients(config, [az.region]), filters, this);
-        },
-        function(err, tags) {
+            c.id = id;
+            c.az = az;
+            if (c.tags) return this(null, tags);
+            var filters = {'resource-type': 'instance', 'resource-id': c.id};
+            ec2Api.loadTags(ec2Api.createClients(config, [c.az.region]), filters, this);
+        }, function(err, tags) {
             if (err) throw (err);
-            argv.filter.Swarm = _(tags).find(function(v){
-               return v.key == "Swarm";
+            c.tags = tags;
+            argv.filter[key] = _(tags).find(function(v){
+               return v.key == key;
             }).value;
             next();
         });
-    }
-    else {
-        this();
-    }
-},
-function(err) {
+    });
+
+    if (!lookup) this();
+}, function(err) {
     if (err) throw err;
     // --regions _self
     var i = regions.indexOf('_self');
@@ -178,8 +184,7 @@ function(err) {
     else {
         this();
     }
-},
-function(err) {
+}, function(err) {
     if (err) throw err;
     swarm[command]();
 });
