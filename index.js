@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // A tool for working with swarms of MapBox servers.
 
 var Step = require('step');
