@@ -1,0 +1,24 @@
+[
+  {
+    "@": {
+      "xmlns": "http://ec2.amazonaws.com/doc/2012-03-01/"
+    },
+    "requestId": "a81a61a4-9471-412b-aa25-c2f83867f9ac",
+    "tagSet": {
+      "item": [
+        {
+          "resourceId": "i-22222222",
+          "value": "foo",
+          "key": "Name",
+          "resourceType": "instance"
+        },
+        {
+          "resourceId": "i-22222222",
+          "value": "Ian",
+          "key": "Owner",
+          "resourceType": "instance"
+        }
+      ]
+    }
+  }
+]
