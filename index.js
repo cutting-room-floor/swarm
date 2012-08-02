@@ -63,6 +63,7 @@ var regions = argv.regions.split(',');
 if (argv.awsKey) config.awsKey = argv.awsKey;
 if (argv.awsSecret) config.awsSecret= argv.awsSecret;
 if (argv.port) config.port = argv.port;
+if (argv.metadataHost) config.metadataHost = argv.metadataHost;
 
 if (!config.awsKey || !config.awsSecret) {
     console.error('Missing awsKey and/or awsSecret in config file.')
@@ -143,7 +144,7 @@ Step(function() {
     // --filter.instanceId _self
     if (argv.filter && argv.filter.instanceId == '_self') {
         var next = this;
-        instanceMetadata.loadId(function(err, id) {
+        instanceMetadata.loadId(config, function(err, id) {
             if (err) next(err);
             argv.filter.instanceId = id;
             next();
@@ -164,8 +165,8 @@ Step(function() {
     _(lookup).each(function(key) {
         var next = group();
         Step(function() {
-            instanceMetadata.loadId(this.parallel())
-            instanceMetadata.loadAz(this.parallel());
+            instanceMetadata.loadId(config, this.parallel())
+            instanceMetadata.loadAz(config, this.parallel());
         }, function(err, id, az) {
             if (err) throw (err);
             if (tagCache) return this(null, tagCache);
@@ -187,7 +188,7 @@ Step(function() {
     var i = regions.indexOf('_self');
     if (i !== -1) {
         var next = this;
-        instanceMetadata.loadAz(function(err, az) {
+        instanceMetadata.loadAz(config, function(err, az) {
             if (err) next(err);
             regions[i] = az.region;
             next();

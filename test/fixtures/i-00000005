@@ -3,28 +3,28 @@
     <requestId>084936da-a0b1-478e-b377-7f277503f5d4</requestId>
     <tagSet>
         <item>
-            <resourceId>i-00000000</resourceId>
+            <resourceId>i-00000005</resourceId>
             <resourceType>instance</resourceType>
             <key>Swarm</key>
-            <value>fish</value>
+            <value>dogs</value>
         </item>
         <item>
-            <resourceId>i-00000000</resourceId>
+            <resourceId>i-00000005</resourceId>
             <resourceType>instance</resourceType>
             <key>PuppetClasses</key>
-            <value>{\"database-server\":{\"supernode\":true, \"backups\":true}}</value>
+            <value>{\"puppetmaster\":{}}</value>
         </item>
         <item>
-            <resourceId>i-00000000</resourceId>
+            <resourceId>i-00000005</resourceId>
             <resourceType>instance</resourceType>
             <key>Name</key>
-            <value>tomcod database A</value>
+            <value>golden retriever puppetmaster</value>
         </item>
         <item>
-            <resourceId>i-00000000</resourceId>
+            <resourceId>i-00000005</resourceId>
             <resourceType>instance</resourceType>
             <key>PuppetEnvironment</key>
-            <value>development</value>
+            <value>production</value>
         </item>
     </tagSet>
 </DescribeTagsResponse>

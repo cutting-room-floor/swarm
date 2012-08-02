@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DescribeTagsResponse xmlns="http://ec2.amazonaws.com/doc/2012-03-01/">
+    <requestId>1fbda2c2-bd97-42ba-9fba-ca66b1f7724b</requestId>
+    <tagSet>
+        <item>
+            <resourceId>i-00000006</resourceId>
+            <resourceType>instance</resourceType>
+            <key>foo</key>
+            <value>bar</value>
+        </item>
+    </tagSet>
+</DescribeTagsResponse>
