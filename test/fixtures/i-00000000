@@ -12,7 +12,7 @@
             <resourceId>i-00000000</resourceId>
             <resourceType>instance</resourceType>
             <key>PuppetClasses</key>
-            <value>{\"database-server\":{\"supernode\":true, \"backups\":true}}</value>
+            <value>{"database-server":{"supernode":true, "backups":true}}</value>
         </item>
         <item>
             <resourceId>i-00000000</resourceId>

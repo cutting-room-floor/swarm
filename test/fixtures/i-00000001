@@ -12,7 +12,7 @@
             <resourceId>i-00000001</resourceId>
             <resourceType>instance</resourceType>
             <key>PuppetClasses</key>
-            <value>{\"database-server\":{}}</value>
+            <value>{"database-server":{}}</value>
         </item>
         <item>
             <resourceId>i-00000001</resourceId>
