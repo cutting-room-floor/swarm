@@ -117,6 +117,20 @@ describe('Basic tests', function(){
         });
     })
   })
+  describe('List all swarms', function(){
+    it('should return the name of two swarms', function(done){
+        exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 \
+          --regions=localhost --metadataHost=localhost:8901 list',
+        function (error, stdout, stderr) {
+            if (error !== null) {
+                console.log('exec error: ' + error);
+            }
+            assert.deepEqual(_(stdout.split("\n")).compact(),
+            ['fish','dogs']);
+            done();
+        });
+    })
+  })
 
 })
 

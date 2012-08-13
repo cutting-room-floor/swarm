@@ -27,7 +27,8 @@ server = http.createServer(function (request, response) {
                 });
             }
             else if (POST.Action == 'DescribeTags') {
-                var instanceId = POST['Filter.2.Value'];
+                var instanceId = POST['Filter.2.Value'] || null;
+                if (!instanceId) instanceId = 'i-list';
                 fs.readFile(path.join(__dirname, instanceId), "binary", function(err, file) {
                     if(err) {        
                         response.writeHead(500, {"Content-Type": "text/plain"});
