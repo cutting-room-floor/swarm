@@ -64,6 +64,7 @@ if (argv.awsKey) config.awsKey = argv.awsKey;
 if (argv.awsSecret) config.awsSecret= argv.awsSecret;
 if (argv.port) config.port = argv.port;
 if (argv.metadataHost) config.metadataHost = argv.metadataHost;
+if (typeof argv.secure !== "undefined") config.secure = argv.secure;
 
 if (!config.awsKey || !config.awsSecret) {
     console.error('Missing awsKey and/or awsSecret in config file.')
