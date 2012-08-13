@@ -131,6 +131,21 @@ describe('Basic tests', function(){
         });
     })
   })
+  describe('Classify an instance', function(){
+    it('should return Puppet ENC classification', function(done){
+        exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 \
+          --regions=localhost --metadataHost=localhost:8901 classify \
+          --filter.privateDnsName=domU-12-30-38-03-7D-67.compute-1.internal',
+        function (error, stdout, stderr) {
+            if (error !== null) {
+                console.log('exec error: ' + error);
+            }
+            assert.strictEqual(stdout.replace(/(\n|\s)/g, ""),
+              'classes:"database-server":supernode:truebackups:trueenvironment:development');
+            done();
+        });
+    })
+  })
 
 })
 
