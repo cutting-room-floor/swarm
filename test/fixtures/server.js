@@ -45,7 +45,6 @@ server = http.createServer(function (request, response) {
     } else {
         if (request.url == '/latest/meta-data/placement/availability-zone') {
             response.writeHead(200, {"Content-Type": "text/plain"});
-            //response.write('us-east-1a');
             response.write('localhostt'); // tt because one t is stripped
             response.end();
             return;

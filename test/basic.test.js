@@ -26,8 +26,8 @@ describe('Basic tests', function(){
             assert.strictEqual(stdout.replace(/\n/g, ""), 'domU-12-30-38-03-7D-67.compute-1.internal');
             done();
         });
-    })
-  })
+    });
+  });
   describe('Get privateDnsName, filter by instanceId of _self', function(){
     it('should return domU-12-30-38-03-7D-67.compute-1.internal', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -40,8 +40,8 @@ describe('Basic tests', function(){
             assert.strictEqual(stdout.replace(/\n/g, ""), 'domU-12-30-38-03-7D-67.compute-1.internal');
             done();
         });
-    })
-  })
+    });
+  });
   describe('Get privateDnsName of all instances in "fish" swarm, filter by Swarm _self', function(){
     it('should return array of four instances', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -56,8 +56,8 @@ describe('Basic tests', function(){
              'ip-10-65-185-140.ec2.internal','ip-10-118-22-28.ec2.internal']);
             done();
         });
-    })
-  })
+    });
+  });
   describe('Get privateDnsName of all instances in "fish" swarm, filter by Swarm fish', function(){
     it('should return array of four instances', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -72,8 +72,8 @@ describe('Basic tests', function(){
              'ip-10-65-185-140.ec2.internal','ip-10-118-22-28.ec2.internal']);
             done();
         });
-    })
-  })
+    });
+  });
   describe('Get privateDnsName of fish production puppetmaster', function(){
     it('should return ip-10-118-22-28.ec2.internal', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -86,8 +86,8 @@ describe('Basic tests', function(){
             assert.strictEqual(stdout.replace(/\n/g, ""), 'ip-10-118-22-28.ec2.internal');
             done();
         });
-    })
-  })
+    });
+  });
   describe('Get instanceId of fish supernode', function(){
     it('should return i-00000000', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -100,8 +100,8 @@ describe('Basic tests', function(){
             assert.strictEqual(stdout.replace(/\n/g, ""), 'i-00000000');
             done();
         });
-    })
-  })
+    });
+  });
   describe('Get instanceId of production servers', function(){
     it('should return five instances', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -115,8 +115,8 @@ describe('Basic tests', function(){
             ['i-00000002','i-00000003','i-00000004','i-00000005']);
             done();
         });
-    })
-  })
+    });
+  });
   describe('List all swarms', function(){
     it('should return the name of two swarms', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -129,8 +129,8 @@ describe('Basic tests', function(){
             ['fish','dogs']);
             done();
         });
-    })
-  })
+    });
+  });
   describe('Classify an instance', function(){
     it('should return Puppet ENC classification', function(done){
         exec('./bin/swarm --awsKey=foo --awsSecret=bar --port=8901 --secure=false \
@@ -144,10 +144,7 @@ describe('Basic tests', function(){
               'classes:"database-server":supernode:truebackups:trueenvironment:development');
             done();
         });
-    })
-  })
+    });
+  });
 
-})
-
-
-
+});
