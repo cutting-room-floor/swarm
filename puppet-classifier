@@ -1,2 +1,3 @@
 #!/usr/bin/env bash
-/usr/bin/swarm classify --config /usr/local/etc/swarm/settings.json --filter.privateDnsName=$1
+
+/usr/bin/swarm classify --config /usr/local/etc/swarm/settings.json --filter.privateDnsName=`curl -s http://169.254.169.254/latest/meta-data/local-hostname`
