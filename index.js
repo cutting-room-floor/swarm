@@ -62,11 +62,6 @@ var regions = argv.regions.split(',');
 if (argv.awsKey) config.awsKey = argv.awsKey;
 if (argv.awsSecret) config.awsSecret= argv.awsSecret;
 
-if (!config.awsKey || !config.awsSecret) {
-    console.error('Missing awsKey and/or awsSecret in config file.')
-    process.exit(1);
-}
-
 var swarm = {};
 
 // List
