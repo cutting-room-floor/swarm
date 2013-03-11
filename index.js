@@ -19,7 +19,8 @@ var optimist = require('optimist')
     .describe('filter', 'Applies a filter to results based on EC2 instance attributes and tags. Use `filter.<attributeName>`. Multiple filters are applied with the AND operator. Required for the classify command and optional for the metadata command.')
     .describe('awsKey', 'awsKey, overrides the value in gconfig file if both are provided.')
     .describe('awsSecret', 'awsSecret, overrides the value in config file if both are provided.')
-    .default('regions', 'us-east-1,us-west-1,us-west-2,eu-west-1,ap-southeast-1,ap-northeast-1,sa-east-1');
+    .default('regions', 'us-east-1,us-west-1,us-west-2,eu-west-1,ap-southeast-1,ap-northeast-1,sa-east-1')
+    .config('config');
 var argv = optimist.argv;
 
 if (argv.help) {
@@ -47,20 +48,10 @@ if (command === 'metadata' && !argv.attribute) {
     process.exit(1);
 }
 
-var config = {};
-if (argv.config) {
-    try {
-        config = JSON.parse(fs.readFileSync(argv.config, 'utf8'));
-    } catch(e) {
-        console.warn('Invalid JSON config file: ' + argv.config);
-        throw e;
-    }
-}
-
 var regions = argv.regions.split(',');
 
-if (argv.awsKey) config.awsKey = argv.awsKey;
-if (argv.awsSecret) config.awsSecret= argv.awsSecret;
+if (argv.awsKey) argv.awsKey = argv.awsKey;
+if (argv.awsSecret) argv.awsSecret= argv.awsSecret;
 
 var swarm = {};
 
@@ -68,7 +59,7 @@ var swarm = {};
 swarm.list = function() {
     Step(function() {
         var filters = {'resource-type': 'instance'};
-        ec2Api.loadTags(ec2Api.createClients(config, regions), filters, this);
+        ec2Api.loadTags(ec2Api.createClients(argv, regions), filters, this);
     }, function(err, tags) {
         if (err) throw err;
         var swarms = _(tags).chain()
@@ -81,7 +72,7 @@ swarm.list = function() {
 
 swarm.metadata = function() {
     Step(function() {
-        ec2Api.loadInstances(ec2Api.createClients(config, regions), argv.filter, this);
+        ec2Api.loadInstances(ec2Api.createClients(argv, regions), argv.filter, this);
     }, function(err, instances) {
         if (err) throw err;
         var possibleAttr = _(instances).chain()
@@ -118,7 +109,7 @@ swarm.metadata = function() {
 //
 swarm.classify = function() {
     Step(function() {
-        ec2Api.loadInstances(ec2Api.createClients(config, regions), argv.filter, this);
+        ec2Api.loadInstances(ec2Api.createClients(argv, regions), argv.filter, this);
     }, function(err, instances) {
         if (err) throw err;
         var instance = _(instances).first();
@@ -163,7 +154,7 @@ Step(function() {
             if (err) throw (err);
             if (tagCache) return this(null, tagCache);
             var filters = {'resource-type': 'instance', 'resource-id': id};
-            ec2Api.loadTags(ec2Api.createClients(config, [az.region]), filters, this);
+            ec2Api.loadTags(ec2Api.createClients(argv, [az.region]), filters, this);
         }, function(err, tags) {
             if (err) return group(err);
             tagCache = tags;

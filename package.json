@@ -17,7 +17,8 @@
     "optimist": "0.3.x",
     "step": "0.0.x",
     "get": "1.1.x",
-    "yamlish": "0.0.x"
+    "yamlish": "0.0.x",
+    "optimist": "https://github.com/willwhite/node-optimist/tarball/config-file"
   },
   "devDependencies": {}
 }
