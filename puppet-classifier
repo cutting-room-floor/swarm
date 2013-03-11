@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-
-/usr/bin/swarm classify --config /usr/local/etc/swarm/settings.json --filter.instanceId=_self
