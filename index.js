@@ -101,6 +101,7 @@ swarm.metadata = function() {
                 .pluck(argv.attribute)
                 .compact()
                 .filter(_.isString)
+                .uniq()
                 .value()
                 .join('\n'));
         }
