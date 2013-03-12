@@ -11,7 +11,6 @@ var optimist = require('optimist')
     .usage('A tool for working with swarms of MapBox servers.\n' +
            'Usage: $0 <command> [options]\n\n' +
            'Available commands:\n' +
-           '  list: list active swarms\n' +
            '  metadata: load given attribute from EC2 API\n' +
            '  classify: return list of puppet classes in YAML format suitable for use with puppet\'s ENC feature')
     .describe('config', 'Path to JSON configuration file that contains awsKey and awsSecret.')
@@ -28,8 +27,8 @@ if (argv.help) {
 }
 
 var command = argv._[0];
-if (!command) command = 'list';
-if (!_(['list', 'metadata', 'classify']).include(command)) {
+if (!command) command = 'metadata';
+if (!_(['metadata', 'classify']).include(command)) {
     optimist.showHelp();
     console.error('Invalid command %s.', command);
     process.exit(1);
@@ -63,21 +62,6 @@ if (argv.awsKey) config.awsKey = argv.awsKey;
 if (argv.awsSecret) config.awsSecret= argv.awsSecret;
 
 var swarm = {};
-
-// List
-swarm.list = function() {
-    Step(function() {
-        var filters = {'resource-type': 'instance'};
-        ec2Api.loadTags(ec2Api.createClients(config, regions), filters, this);
-    }, function(err, tags) {
-        if (err) throw err;
-        var swarms = _(tags).chain()
-            .filter(function(tag) { return tag.key === 'Swarm' })
-            .pluck('value')
-            .uniq().value();
-        console.log(swarms.join('\n'));
-    });
-};
 
 swarm.metadata = function() {
     Step(function() {
