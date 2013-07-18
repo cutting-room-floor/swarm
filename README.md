@@ -3,6 +3,11 @@ SWARM
 
 An EC2 listing and searching utility. Swarm lets you quickly get information about the EC2s you have running and filter based on certain metadata.
 
+## Typical Usage
+
+Swarm is mostly a server-side script used as parts of bash scripts, rather than a CLI tool
+for devs. We use it for self-selecting masters and certain kinds of replication.
+
 ## Examples
 
 List running swarms
@@ -81,7 +86,3 @@ Filter your ec2's using Swarm with commands like:
 
 Notice the ClassParameter filter is a class name and a parameter on that class separated by a colon.  At present, swarm does not check the value of a paramter or class parameter, but instead filters based on whether or not that paramter or class paramter exists at all.
 
-## Typical Usage
-
-Swarm is mostly a server-side script used as parts of bash scripts, rather than a CLI tool
-for devs. We use it for self-selecting masters and certain kinds of replication.
